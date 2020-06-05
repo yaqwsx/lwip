@@ -48,6 +48,8 @@
 #include "lwip/ip6.h"
 #include "lwip/prot/ip.h"
 
+#include "lwip/ip6_routing.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

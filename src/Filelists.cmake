@@ -78,6 +78,7 @@ set(lwipcore6_SRCS
     ${LWIP_DIR}/src/core/ipv6/ip6_frag.c
     ${LWIP_DIR}/src/core/ipv6/mld6.c
     ${LWIP_DIR}/src/core/ipv6/nd6.c
+    ${LWIP_DIR}/src/core/ipv6/ip6_routing.cpp
 )
 
 # APIFILES: The files which implement the sequential and socket APIs.

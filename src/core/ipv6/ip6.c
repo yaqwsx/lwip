@@ -213,6 +213,12 @@ ip6_route(const ip6_addr_t *src, const ip6_addr_t *dest)
     return netif;
   }
 
+  /* Try to find a route in the routing table. */
+  netif = ip_find_route(dest);
+  if (netif != NULL) {
+    return netif;
+  }
+
   /* Try with the netif that matches the source address. Given the earlier rule
    * for scoped source addresses, this applies to unscoped addresses only. */
   if (!ip6_addr_isany(src)) {
@@ -1305,6 +1311,10 @@ ip6_output(struct pbuf *p, const ip6_addr_t *src, const ip6_addr_t *dest,
     ip6_addr_copy_from_packed(src_addr, ip6hdr->src);
     ip6_addr_copy_from_packed(dest_addr, ip6hdr->dest);
     netif = ip6_route(&src_addr, &dest_addr);
+  }
+
+  if (netif == NULL) {
+    netif = ip_find_route(dest);
   }
 
   if (netif == NULL) {
