@@ -12,7 +12,7 @@
 static std::vector< struct rt_entry > ip_rt_table;
 static std::pair< struct rt_entry, bool > default_gw;
 
-bool cmp_masks(const struct rt_entry& a, const struct rt_entry& b) {
+int cmp_masks(const struct rt_entry& a, const struct rt_entry& b) {
 	return a.mask > b.mask;
 }
 
@@ -42,7 +42,7 @@ void mask_to_address(uint8_t mask, ip6_addr_t* m) {
 	}
 
 	std::ostringstream s;
-	
+
 	while (mask >= 16) {
 		s << "ffff:";
 		mask = mask - 16;
@@ -68,7 +68,7 @@ void ip_print_table() {
 	if ( !default_gw.second ) {
 		std::cout << "default gateway not set\n";
 	} else {
-		std::cout << "default gateway set - ip: " << ip6addr_ntoa( &default_gw.first.addr ) << " gw: " << default_gw.first.gw_name << "\n"; 
+		std::cout << "default gateway set - ip: " << ip6addr_ntoa( &default_gw.first.addr ) << " gw: " << default_gw.first.gw_name << "\n";
 	}
 	for (const auto& rec : ip_rt_table) {
 		std::cout << "ip: " << ip6addr_ntoa(&rec.addr) << "/" << static_cast<int>(rec.mask)
@@ -77,9 +77,6 @@ void ip_print_table() {
 }
 
 void unmask(ip6_addr_t& ip, const ip6_addr_t& mask) {
-	//std::cout << "ip for unmask"; print_ip(&ip);
-	//std::cout << "mask for unmask"; print_ip(&mask);
-
 	for (int i = 0; i < 4; i++)
 		ip.addr[i] &= mask.addr[i];
 }
@@ -92,7 +89,7 @@ void fill_rt_entry(struct rt_entry* r, const ip6_addr_t* addr, uint8_t mask, con
 
 
 
-bool ip_add_route(const ip6_addr_t* addr, uint8_t mask, const char* netif_name) {
+int ip_add_route(const ip6_addr_t* addr, uint8_t mask, const char* netif_name) {
 	auto entry = ip_find_route(addr);
 
 	if (entry == nullptr) {
@@ -100,10 +97,10 @@ bool ip_add_route(const ip6_addr_t* addr, uint8_t mask, const char* netif_name) 
 		fill_rt_entry(&r, addr, mask, netif_name);
 		ip_rt_table.push_back(r);
 		std::sort(ip_rt_table.begin(), ip_rt_table.end(), cmp_masks);
-		return true;
+		return 1;
 	}
 
-  	return false;
+  	return 0;
 }
 
 
@@ -125,24 +122,24 @@ struct netif* ip_find_route(const ip6_addr_t* ip) {
 	return nullptr;
 }
 
-bool ip_rm_route(const ip6_addr_t* ip, uint8_t mask, const char* netif_name) {
+int ip_rm_route(const ip6_addr_t* ip, uint8_t mask, const char* netif_name) {
 	for (auto it = ip_rt_table.begin(); it != ip_rt_table.end(); it++) {
 		if (ip6_addr_cmp(&it->addr, ip) && it->mask == mask) {
 			ip_rt_table.erase(it);
-			return true;
+			return 1;
 		}
 	}
-	return false;
+	return 0;
 }
 
-bool ip_rm_route_if(const char* netif_name) {
-	int size = ip_rt_table.size();
+int ip_rm_route_if(const char* netif_name) {
+	unsigned size = ip_rt_table.size();
 
 	ip_rt_table.erase( std::remove_if( ip_rt_table.begin(), ip_rt_table.end(), [&netif_name](rt_entry& r) {
 			return strcmp(netif_name, r.gw_name) == 0;
 		} ), ip_rt_table.end() );
-	
-	return size != ip_rt_table.size();
+
+	return size != ip_rt_table.size() ? 1 : 0;
 }
 
 void ip_update_route(const ip6_addr_t* ip, uint8_t mask, const char* new_gw) {
@@ -156,14 +153,14 @@ void ip_update_route(const ip6_addr_t* ip, uint8_t mask, const char* new_gw) {
 	}
 }
 
-bool set_default_gw(const ip6_addr_t* addr, uint8_t mask, const char* netif_name) {
+int set_default_gw(const ip6_addr_t* addr, uint8_t mask, const char* netif_name) {
 	if (default_gw.second) {
-		return false;
+		return 0;
 	}
 
 	fill_rt_entry(&default_gw.first, addr, mask, netif_name);
 	default_gw.second = true;
-	return true;
+	return 1;
 }
 
 void remove_default_gw() {
