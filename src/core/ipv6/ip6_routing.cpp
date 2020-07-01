@@ -48,7 +48,7 @@ void mask_to_address(uint8_t mask, ip6_addr_t* m) {
 		mask = mask - 16;
 	}
 
-	while (mask > 4) {
+	while (mask >= 4) {
 		s << "f";
 		mask = mask - 4;
 		if (mask == 0) {
