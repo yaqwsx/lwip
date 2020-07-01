@@ -76,10 +76,6 @@ void ip_print_table() {
 	}
 }
 
-void unmask(ip6_addr_t& ip, const ip6_addr_t& mask) {
-	for (int i = 0; i < 4; i++)
-		ip.addr[i] &= mask.addr[i];
-}
 
 void ip6_addr_and(ip6_addr_t& ip, const ip6_addr_t& mask) {
 	for (int i = 0; i < 4; i++)
@@ -122,7 +118,6 @@ struct netif* ip_find_route(const ip6_addr_t* ip) {
 	for (auto& rec : ip_rt_table) {
 		ip6_addr_t searched;
 		ip_mask_and(ip, rec.mask, &searched);
-		//printf("ip zone - %d | mask zone - %d | unmasked zone - %d | rec zone - %d\n", ip6_addr_zone(ip), ip6_addr_zone(&mask), ip6_addr_zone(&unmasked), ip6_addr_zone(&rec.addr));
 		if (ip6_addr_cmp_zoneless(&searched, &rec.addr)) {
 			return netif_find(rec.gw_name);
     	}
