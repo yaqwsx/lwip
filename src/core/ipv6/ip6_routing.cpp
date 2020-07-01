@@ -81,8 +81,22 @@ void unmask(ip6_addr_t& ip, const ip6_addr_t& mask) {
 		ip.addr[i] &= mask.addr[i];
 }
 
+void ip6_addr_and(ip6_addr_t& ip, const ip6_addr_t& mask) {
+	for (int i = 0; i < 4; i++)
+		ip.addr[i] &= mask.addr[i];
+}
+
+void ip_mask_and(const ip6_addr_t* ip, uint8_t mask, ip6_addr_t* result) {
+	ip6_addr_t ip_mask;
+	mask_to_address(mask, &ip_mask);
+	ip6_addr_copy(*result, *ip);
+	ip6_addr_and(*result, ip_mask);
+}
+
 void fill_rt_entry(struct rt_entry* r, const ip6_addr_t* addr, uint8_t mask, const char* netif_name) {
-	ip6_addr_copy(r->addr, *addr);
+	ip6_addr_t ip;
+	ip_mask_and(addr, mask, &ip);
+	ip6_addr_copy(r->addr, ip);
 	r->mask = mask;
 	memcpy(r->gw_name, netif_name, GW_NAME_SIZE);
 }
@@ -106,12 +120,10 @@ int ip_add_route(const ip6_addr_t* addr, uint8_t mask, const char* netif_name) {
 
 struct netif* ip_find_route(const ip6_addr_t* ip) {
 	for (auto& rec : ip_rt_table) {
-		ip6_addr_t unmasked, mask;
-		mask_to_address(rec.mask, &mask);
-		ip6_addr_copy(unmasked, *ip);
-		unmask(unmasked, mask);
+		ip6_addr_t searched;
+		ip_mask_and(ip, rec.mask, &searched);
 		//printf("ip zone - %d | mask zone - %d | unmasked zone - %d | rec zone - %d\n", ip6_addr_zone(ip), ip6_addr_zone(&mask), ip6_addr_zone(&unmasked), ip6_addr_zone(&rec.addr));
-		if (ip6_addr_cmp_zoneless(&unmasked, &rec.addr)) {
+		if (ip6_addr_cmp_zoneless(&searched, &rec.addr)) {
 			return netif_find(rec.gw_name);
     	}
   	}
@@ -123,8 +135,10 @@ struct netif* ip_find_route(const ip6_addr_t* ip) {
 }
 
 int ip_rm_route(const ip6_addr_t* ip, uint8_t mask) {
+  ip6_addr_t searched;
+	ip_mask_and(ip, mask, &searched);
 	for (auto it = ip_rt_table.begin(); it != ip_rt_table.end(); it++) {
-		if (ip6_addr_cmp(&it->addr, ip) && it->mask == mask) {
+		if (it->mask == mask && ip6_addr_cmp(&it->addr, &searched)) {
 			ip_rt_table.erase(it);
 			return 1;
 		}
