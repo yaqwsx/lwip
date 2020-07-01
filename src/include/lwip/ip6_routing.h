@@ -23,7 +23,7 @@ int ip_add_route(const ip6_addr_t* ip, uint8_t mask, const char* gw);
 
 struct netif* ip_find_route(const ip6_addr_t* ip);
 
-int ip_rm_route(const ip6_addr_t* ip, uint8_t mask, const char* gw);
+int ip_rm_route(const ip6_addr_t* ip, uint8_t mask);
 
 int ip_rm_route_if(const char* netif_name);
 

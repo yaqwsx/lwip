@@ -122,7 +122,7 @@ struct netif* ip_find_route(const ip6_addr_t* ip) {
 	return nullptr;
 }
 
-int ip_rm_route(const ip6_addr_t* ip, uint8_t mask, const char* netif_name) {
+int ip_rm_route(const ip6_addr_t* ip, uint8_t mask) {
 	for (auto it = ip_rt_table.begin(); it != ip_rt_table.end(); it++) {
 		if (ip6_addr_cmp(&it->addr, ip) && it->mask == mask) {
 			ip_rt_table.erase(it);
