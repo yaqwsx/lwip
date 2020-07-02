@@ -11,6 +11,10 @@
 
 static std::vector< struct rt_entry > ip_rt_table;
 
+int ip_size() {
+  return ip_rt_table.size();
+}
+
 int cmp_masks(const struct rt_entry& a, const struct rt_entry& b) {
 	return a.mask > b.mask;
 }

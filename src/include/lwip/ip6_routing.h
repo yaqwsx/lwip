@@ -18,6 +18,7 @@ struct rt_entry {
 	char gw_name[GW_NAME_SIZE];
 };
 
+int ip_size();
 
 int ip_add_route(const ip6_addr_t* ip, uint8_t mask, const char* gw);
 
