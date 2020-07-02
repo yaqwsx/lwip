@@ -31,12 +31,7 @@ void ip_update_route(const ip6_addr_t* ip, uint8_t mask, const char* new_gw);
 
 void ip_print_table();
 
-void print_ip(const ip6_addr_t* ip);
-
 void mask_to_address(uint8_t mask, ip6_addr_t* m);
-
-int set_default_gw(const ip6_addr_t* addr, uint8_t mask, const char* netif_name);
-void remove_default_gw();
 
 #ifdef __cplusplus
 }

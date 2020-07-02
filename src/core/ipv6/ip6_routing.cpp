@@ -10,7 +10,6 @@
 #include "lwip/ip6_routing.h"
 
 static std::vector< struct rt_entry > ip_rt_table;
-static std::pair< struct rt_entry, bool > default_gw;
 
 int cmp_masks(const struct rt_entry& a, const struct rt_entry& b) {
 	return a.mask > b.mask;
@@ -60,16 +59,7 @@ void mask_to_address(uint8_t mask, ip6_addr_t* m) {
 	ip6addr_aton(s.str().c_str(), m);
 }
 
-void print_ip(const ip6_addr_t* ip) {
-	printf("ip6: %s\n", ip6addr_ntoa(ip));
-}
-
 void ip_print_table() {
-	if ( !default_gw.second ) {
-		std::cout << "default gateway not set\n";
-	} else {
-		std::cout << "default gateway set - ip: " << ip6addr_ntoa( &default_gw.first.addr ) << " gw: " << default_gw.first.gw_name << "\n";
-	}
 	for (const auto& rec : ip_rt_table) {
 		std::cout << "ip: " << ip6addr_ntoa(&rec.addr) << "/" << static_cast<int>(rec.mask)
 		    << " gw: " << rec.gw_name << "\n";
@@ -115,16 +105,13 @@ int ip_add_route(const ip6_addr_t* addr, uint8_t mask, const char* netif_name) {
 
 
 struct netif* ip_find_route(const ip6_addr_t* ip) {
+	ip6_addr_t searched;
 	for (auto& rec : ip_rt_table) {
-		ip6_addr_t searched;
 		ip_mask_and(ip, rec.mask, &searched);
 		if (ip6_addr_cmp_zoneless(&searched, &rec.addr)) {
 			return netif_find(rec.gw_name);
     	}
   	}
-
-	if ( default_gw.second )
-		return netif_find( default_gw.first.gw_name );
 
 	return nullptr;
 }
@@ -152,26 +139,14 @@ int ip_rm_route_if(const char* netif_name) {
 }
 
 void ip_update_route(const ip6_addr_t* ip, uint8_t mask, const char* new_gw) {
+  ip6_addr_t searched;
+	ip_mask_and(ip, mask, &searched);
 	int i = 0;
 	while (ip_rt_table[i].mask <= mask) {
-		if (mask == ip_rt_table[i].mask && ip6_addr_cmp_zoneless(&ip_rt_table[i].addr, ip)) {
+		if (mask == ip_rt_table[i].mask && ip6_addr_cmp_zoneless(&ip_rt_table[i].addr, &searched)) {
 			memcpy(ip_rt_table[i].gw_name, new_gw, GW_NAME_SIZE);
 			break;
 		}
 		i++;
 	}
-}
-
-int set_default_gw(const ip6_addr_t* addr, uint8_t mask, const char* netif_name) {
-	if (default_gw.second) {
-		return 0;
-	}
-
-	fill_rt_entry(&default_gw.first, addr, mask, netif_name);
-	default_gw.second = true;
-	return 1;
-}
-
-void remove_default_gw() {
-	default_gw.second = false;
 }
