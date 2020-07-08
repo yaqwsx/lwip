@@ -19,31 +19,27 @@ int cmp_masks(const struct rt_entry& a, const struct rt_entry& b) {
 	return a.mask > b.mask;
 }
 
-std::string chunk_to_rest(uint8_t chunk) {
+std::string chunk_to_rest(uint8_t chunk, bool b) {
+	std::string s;
 	switch (chunk) {
 		case 3:
-			return "e::";
+			s = "e";
+			break;
 		case 2:
-			return "c::";
+			s = "c";
+			break;
 		case 1:
-			return "8::";
-		case 0:
-			return ":";
+			s = "8";
+			break;
 		default:
-			std::cerr << "chunk_to_rest got something wrong\n";
-			return "";
+			return b ? "" : ":";
 	}
+	return b ? s : s.append("::");
 }
 
 void mask_to_address(uint8_t mask, ip6_addr_t* m) {
-	if (mask == 128) {
-		ip6addr_aton("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", m);
-		return;
-	} else if (mask == 0) {
-		ip6_addr_set_zero(m);
-		return;
-	}
-
+	ip6_addr_set_zero(m);
+	bool edge_segment = mask > 112 || mask <= 16;
 	std::ostringstream s;
 
 	while (mask >= 16) {
@@ -54,12 +50,12 @@ void mask_to_address(uint8_t mask, ip6_addr_t* m) {
 	while (mask >= 4) {
 		s << "f";
 		mask = mask - 4;
-		if (mask == 0) {
+		if (mask == 0 && !edge_segment) {
 			s << ":";
 		}
 	}
 
-	s << chunk_to_rest(mask);
+	s << chunk_to_rest(mask, edge_segment);
 	ip6addr_aton(s.str().c_str(), m);
 }
 
