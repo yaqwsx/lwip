@@ -88,11 +88,22 @@ void fill_rt_entry(struct rt_entry* r, const ip6_addr_t* addr, uint8_t mask, con
 }
 
 
+struct rt_entry* ip_find_route_entry(const ip6_addr_t* ip) {
+	ip6_addr_t searched;
+	for (auto& rec : ip_rt_table) {
+		ip_mask_and(ip, rec.mask, &searched);
+		if (ip6_addr_cmp_zoneless(&searched, &rec.addr)) {
+			return &rec;
+    	}
+  	}
+
+	return nullptr;
+}
 
 int ip_add_route(const ip6_addr_t* addr, uint8_t mask, const char* netif_name) {
-	auto entry = ip_find_route(addr);
+	auto entry = ip_find_route_entry(addr);
 
-	if (entry == nullptr) {
+	if (entry == nullptr || entry->mask != mask) {
 		struct rt_entry r;
 		fill_rt_entry(&r, addr, mask, netif_name);
 		ip_rt_table.push_back(r);
@@ -105,15 +116,8 @@ int ip_add_route(const ip6_addr_t* addr, uint8_t mask, const char* netif_name) {
 
 
 struct netif* ip_find_route(const ip6_addr_t* ip) {
-	ip6_addr_t searched;
-	for (auto& rec : ip_rt_table) {
-		ip_mask_and(ip, rec.mask, &searched);
-		if (ip6_addr_cmp_zoneless(&searched, &rec.addr)) {
-			return netif_find(rec.gw_name);
-    	}
-  	}
-
-	return nullptr;
+	auto entry = ip_find_route_entry(ip);
+	return entry ? netif_find(entry->gw_name) : nullptr;
 }
 
 int ip_rm_route(const ip6_addr_t* ip, uint8_t mask) {
