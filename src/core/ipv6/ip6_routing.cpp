@@ -12,7 +12,7 @@
 static std::vector< struct rt_entry > ip_rt_table;
 
 int ip_size() {
-  return ip_rt_table.size();
+  return int(ip_rt_table.size());
 }
 
 int cmp_masks(const struct rt_entry& a, const struct rt_entry& b) {
@@ -133,7 +133,7 @@ int ip_rm_route(const ip6_addr_t* ip, uint8_t mask) {
 }
 
 int ip_rm_route_if(const char* netif_name) {
-	unsigned size = ip_rt_table.size();
+	unsigned size = unsigned(ip_rt_table.size());
 
 	ip_rt_table.erase( std::remove_if( ip_rt_table.begin(), ip_rt_table.end(), [&netif_name](rt_entry& r) {
 			return strcmp(netif_name, r.gw_name) == 0;
